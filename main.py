@@ -58,9 +58,10 @@ class Contact(Base):
     designation = Column(String(255),nullable=False)
     subject = Column(String(255),nullable=False)
     body = Column(Text,nullable=False)
+    phone_number = Column(String(13), nullable=False)
     created_date = Column(Date, default=func.current_date())
 
-def write_to_database(name, email, designation, subject, body):
+def write_to_database(name, email, designation, subject, body, phone):
     engine = create_engine(os.getenv("DATABASE_URL"), echo=True)
 
     Base.metadata.create_all(engine)
@@ -74,6 +75,7 @@ def write_to_database(name, email, designation, subject, body):
         designation=designation,
         subject=subject,
         body=body,
+        phone_number = phone,
         created_date=datetime.utcnow()
     )
 
@@ -86,6 +88,7 @@ def write_to_database(name, email, designation, subject, body):
 #API ENDPOINT
 class EmailRequest(BaseModel):
     query_mail : str
+    phone: str
     Name:str
     Designation: str
     title: str
@@ -103,11 +106,12 @@ async def endpoint_to_send_email(request_data : EmailRequest, api_key: str = Dep
 
             Name: {request_data.Name}
             Designation: {request_data.Designation}
+            Phone: {request_data.phone}
             Email: {request_data.query_mail}
             """
     
     # WRITING IN DATABASE
-    write_to_database(name=request_data.Name, email=request_data.query_mail, designation=request_data.Designation, subject=request_data.title, body=body)
+    write_to_database(name=request_data.Name, email=request_data.query_mail, designation=request_data.Designation, subject=request_data.title, body=body, phone=request_data.phone)
 
     smtp_server = "smtp.gmail.com"
     smtp_port = 587
@@ -126,6 +130,5 @@ async def endpoint_to_send_email(request_data : EmailRequest, api_key: str = Dep
         server.sendmail(sender_email, receiver_email, message.as_string())
 
     return JSONResponse(content={"status":"Email Sent"})
-
 
 
